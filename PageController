@@ -1,0 +1,195 @@
+public class PagesController : Controller
+    {
+        private readonly IUnitOfWork _unitOfWork;
+
+        public PagesController(IUnitOfWork unitOfWork)
+        {
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task<ActionResult> Index()
+        {
+            var pages = await _unitOfWork.Pages.GetPagesAsync();
+
+            List<PageViewModel> viewModel = new List<PageViewModel>();
+
+            foreach (var page in pages)
+            {
+                viewModel.Add(new PageViewModel { Title = page.Title, Content = page.Content, HasSidebar = page.HasSidebar, Slug = page.Slug, Id = page.Id, Sidebar = page.Sidebar, IsVisibleInMenu = page.IsVisibleInMenu, SidebarId = page.SidebarId, IsVisibleToSearchEngine = page.IsVisibleToSearchEngine, MetaKeywords = page.MetaKeywords, MetaDescription = page.MetaDescription });
+            }
+
+            return View(viewModel);
+        }
+
+        public ActionResult AddPage()
+        {
+            ViewBag.Sidebars = _unitOfWork.Sidebars.GetSidebars();
+            return View();
+        }
+
+        [HttpPost]
+        public ActionResult AddPage(PageViewModel viewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                // we will create a variable to store the generated slug by the SlugHelper class
+                string slug;
+
+                Page page = new Page();
+
+                page.Title = viewModel.Title;
+
+                // slug creation
+                if (string.IsNullOrWhiteSpace(viewModel.Slug))
+                    slug = SlugHelper.Create(true, viewModel.Title);
+                else
+                    slug = SlugHelper.Create(true, viewModel.Slug);
+
+                // slug checking if unique or not
+
+                if (_unitOfWork.Pages.TitleSlugUnique(viewModel.Title, slug))
+                {
+                    ModelState.AddModelError("", "That title or slug already exists");
+                    ViewBag.Sidebars = _unitOfWork.Sidebars.GetSidebars();
+                    return View(viewModel);
+                }
+
+                page.Slug = slug;
+                page.Content = viewModel.Content;
+                page.HasSidebar = viewModel.HasSidebar;
+                page.IsVisibleToSearchEngine = viewModel.IsVisibleToSearchEngine;
+                page.MetaKeywords = viewModel.MetaKeywords;
+                page.MetaDescription = viewModel.MetaDescription;
+
+                page.SidebarId = viewModel.SidebarId;
+
+                // IsVisibleInMenu
+                if(page.Slug == "home")
+                {
+                    page.IsVisibleInMenu = true;
+                }
+                else
+                {
+                    page.IsVisibleInMenu = viewModel.IsVisibleInMenu;
+                }
+
+                _unitOfWork.Pages.Add(page);
+                _unitOfWork.CommitAsync();
+
+                return RedirectToAction("Index");
+            }
+
+            ViewBag.Sidebars = _unitOfWork.Sidebars.GetSidebars();
+            return View(viewModel);
+        }
+
+        public async Task<ActionResult> EditPage(int? id)
+        {
+            if (id == null)
+                return HttpNotFound();
+
+            var page = await _unitOfWork.Pages.GetPageByIdAsync(id);
+
+            if (page == null)
+                return HttpNotFound();
+
+            var viewModel = new PageViewModel(page);
+
+            ViewBag.Sidebars = _unitOfWork.Sidebars.GetSidebars();
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> EditPage(PageViewModel viewModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Sidebars = _unitOfWork.Sidebars.GetSidebars();
+                return View(viewModel);
+            }
+
+            string slug = "home";
+
+            // get the page data from the database using the viewmodel.Id
+
+            var page = await _unitOfWork.Pages.GetPageByIdAsync(viewModel.Id);
+
+            page.Title = viewModel.Title;
+
+            // editing of the slug
+
+            if (viewModel.Slug != "home")
+                if (string.IsNullOrWhiteSpace(viewModel.Slug))
+                    slug = SlugHelper.Create(true, viewModel.Title);
+                else
+                    slug = SlugHelper.Create(true, viewModel.Slug);
+
+            // checking unique
+            if (_unitOfWork.Pages.TitleSlugUnique(page.Id, page.Title, slug))
+            {
+                ModelState.AddModelError("", "That title or slug already exists");
+                ViewBag.Sidebars = _unitOfWork.Sidebars.GetSidebars();
+                return View(viewModel);
+            }
+
+            page.Slug = slug;
+            page.Content = viewModel.Content;
+            page.HasSidebar = viewModel.HasSidebar;
+            page.IsVisibleToSearchEngine = viewModel.IsVisibleToSearchEngine;
+            page.MetaDescription = viewModel.MetaDescription;
+            page.MetaKeywords = viewModel.MetaKeywords;
+            page.SidebarId = viewModel.SidebarId;
+            page.Sidebar = viewModel.Sidebar;
+
+            if(page.Slug == "home")
+            {
+                page.IsVisibleInMenu = true;
+            }
+            else
+            {
+                page.IsVisibleInMenu = viewModel.IsVisibleInMenu;
+            }
+
+            _unitOfWork.CommitAsync();
+
+            return RedirectToAction("Index");
+
+        }
+
+        public async Task<ActionResult> DeletePage(int? id)
+        {
+            if (id == null)
+                return HttpNotFound();
+
+            var page = await _unitOfWork.Pages.GetPageByIdAsync(id);
+
+            if (page == null)
+                return HttpNotFound();
+
+            var viewModel = new PageViewModel(page);
+
+            ViewBag.Sidebars = _unitOfWork.Sidebars.GetSidebars();
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ActionName("DeletePage")]
+        public async Task<ActionResult> DeleteConfirmed(int? id)
+        {
+            if (id == null)
+                return HttpNotFound();
+
+            var page = await _unitOfWork.Pages.GetPageByIdAsync(id);
+
+            if (page == null)
+                return HttpNotFound();
+
+            _unitOfWork.Pages.Remove(page);
+            _unitOfWork.CommitAsync();
+
+            return RedirectToAction("Index");
+        }
+    }
+}
