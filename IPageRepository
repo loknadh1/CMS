@@ -1,0 +1,32 @@
+public interface IPageRepository
+    {
+        // CRUD operation empty methods
+
+        IEnumerable<Page> GetPages();
+
+        Task<IEnumerable<Page>> GetPagesAsync();
+
+        Page GetPageById(int? id);
+
+        Task<Page> GetPageByIdAsync(int? id);
+
+        void Add(Page page);
+
+        void Remove(Page page);
+
+        // some custom logic methods
+
+        // GetPageBySlugAsync()
+        Task<Page> GetPageBySlugAsync(string slug);
+
+        // methods to check if the title or a slug is unqiue
+        bool TitleSlugUnique(string title, string slug);
+        bool TitleSlugUnique(int id, string title, string slug);
+
+        // method to check if a slug exists in the database
+        bool SlugExists(string slug);
+
+        // method to get page menu data
+        IEnumerable<Page> GetPageMenus();
+    }
+}
