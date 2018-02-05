@@ -1,0 +1,123 @@
+[Authorize(Roles = "admin")]
+    public class RolesController : Controller
+    {
+        // 1. we need to use the RoleManager<T> class
+        // 2. RoleManager<T> class will need RoleStore<T> class
+        // 3. RoleStore<T> class will need the DataContext
+        private readonly RoleManager<IdentityRole> _roleManager = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(new ApplicationDbContext()));
+
+        public ActionResult Index()
+        {
+            // we get all the roles from the db
+            var rolesFromDb = _roleManager.Roles.ToList();
+
+            List<RoleViewModel> viewModel = new List<RoleViewModel>();
+
+            foreach (var role in rolesFromDb)
+            {
+                viewModel.Add(new RoleViewModel { Id = role.Id, Name = role.Name });
+            }
+
+            return View(viewModel);
+        }
+
+        public ActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create(RoleViewModel viewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                // we call the create method
+
+                var roleAdded = _roleManager.Create(new IdentityRole { Name = viewModel.Name });
+
+                // the create method will return an IdentiyResult and it has a succeeded property
+                if (roleAdded.Succeeded)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    // show the error using the ModelState
+                    ModelState.AddModelError("RoleError", roleAdded.Errors.FirstOrDefault());
+                }
+
+            }
+
+            return View(viewModel);
+        }
+
+        public ActionResult Edit(string id)
+        {
+            if (id == null)
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest); // 400 error
+
+            // now here we will use the id to fetch the role information
+
+            var roleFromDb = _roleManager.Roles.Where(x => x.Id == id).FirstOrDefault();
+
+            // transfer the role data to the roleviewmodel
+            var viewModel = new RoleViewModel(roleFromDb);
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit(RoleViewModel viewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                var roleFromDb = _roleManager.Roles.Where(x => x.Id == viewModel.Id).FirstOrDefault();
+
+                roleFromDb.Name = viewModel.Name;
+
+                // we need to call the update method on the RoleManager which returns an IdentityResult
+
+                var roleUpdated = _roleManager.Update(roleFromDb);
+
+                if (roleUpdated.Succeeded)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    ModelState.AddModelError("", roleUpdated.Errors.FirstOrDefault());
+                }
+            }
+
+            return View(viewModel);
+        }
+
+        public ActionResult Delete(string id)
+        {
+            if (id == null)
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest); // 400 error
+
+            // now here we will use the id to fetch the role information
+
+            var roleFromDb = _roleManager.Roles.Where(x => x.Id == id).FirstOrDefault();
+
+            // transfer the role data to the roleviewmodel
+            var viewModel = new RoleViewModel(roleFromDb);
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Delete(string id, string name)
+        {
+            var roleFromDb = _roleManager.Roles.Where(x => x.Id == id).FirstOrDefault();
+
+            var roleDeleted = _roleManager.Delete(roleFromDb);
+
+            return RedirectToAction("Index");
+        }
+    }
+}
