@@ -1,0 +1,69 @@
+public class PageRepository : IPageRepository
+    {
+        // global object reference
+        private readonly ApplicationDbContext _context;
+
+        public PageRepository(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public void Add(Page page)
+        {
+            _context.Pages.Add(page);
+        }
+
+        public Page GetPageById(int? id)
+        {
+            return _context.Pages.Find(id);
+        }
+
+        public async Task<Page> GetPageByIdAsync(int? id)
+        {
+            return await _context.Pages.FindAsync(id);
+        }
+
+        public async Task<Page> GetPageBySlugAsync(string slug)
+        {
+            return await _context.Pages.Where(x => x.Slug == slug).FirstOrDefaultAsync();
+        }
+
+        public IEnumerable<Page> GetPageMenus()
+        {
+            // we need to get page data for all pages who have IsVisibleInMenu as true
+            return _context.Pages.ToArray().Where(x => x.Slug != "home" && x.IsVisibleInMenu == true).ToList();
+        }
+
+        public IEnumerable<Page> GetPages()
+        {
+            return _context.Pages.ToList();
+        }
+
+        public async Task<IEnumerable<Page>> GetPagesAsync()
+        {
+            return await _context.Pages.ToListAsync();
+        }
+
+        public void Remove(Page page)
+        {
+            _context.Pages.Remove(page);
+        }
+
+        public bool SlugExists(string slug)
+        {
+            return _context.Pages.Any(x => x.Slug == slug);
+        }
+
+        public bool TitleSlugUnique(string title, string slug)
+        {
+            return _context.Pages.Any(x => x.Slug == slug) ||
+                _context.Pages.Any(x => x.Title == title);
+        }
+
+        public bool TitleSlugUnique(int id, string title, string slug)
+        {
+            return _context.Pages.Where(x => x.Id != id).Any(x => x.Title == title) ||
+                _context.Pages.Where(x => x.Id != id).Any(x => x.Slug == slug);
+        }
+    }
+}
