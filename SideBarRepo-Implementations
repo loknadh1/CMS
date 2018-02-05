@@ -1,0 +1,43 @@
+public class SidebarRepository : ISidebarRepository
+    {
+        private readonly ApplicationDbContext _context;
+
+        public SidebarRepository(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public void Add(Sidebar sideBar)
+        {
+            _context.Sidebars.Add(sideBar);
+
+            //_context.SaveChanges();
+            // we will not call savechanges in the repository. we will use unit of work pattern for doing that.
+        }
+
+        public Sidebar GetSidebarById(int? id)
+        {
+            return _context.Sidebars.Find(id);
+        }
+
+        public async Task<Sidebar> GetSidebarByIdAsync(int? id)
+        {
+            return await _context.Sidebars.FindAsync(id);
+        }
+
+        public IEnumerable<Sidebar> GetSidebars()
+        {
+            return _context.Sidebars.ToList();
+        }
+
+        public async Task<IEnumerable<Sidebar>> GetSidebarsAsync()
+        {
+            return await _context.Sidebars.ToListAsync();
+        }
+
+        public void Remove(Sidebar sideBar)
+        {
+            _context.Sidebars.Remove(sideBar);
+        }
+    }
+}
