@@ -1,0 +1,22 @@
+public interface ISidebarRepository
+    {
+        // CRUD operation empty methods
+
+        // GetSidebars
+        IEnumerable<Sidebar> GetSidebars();
+
+        // GetSidebarsAsync()
+        Task<IEnumerable<Sidebar>> GetSidebarsAsync();
+
+        // GetSidebarById(int id)
+        Sidebar GetSidebarById(int? id);
+
+        // GetSidebarByIdAsync(int? id)
+        Task<Sidebar> GetSidebarByIdAsync(int? id);
+
+        // Add and Remove
+        void Add(Sidebar sideBar);
+
+        void Remove(Sidebar sideBar);
+    }
+}
